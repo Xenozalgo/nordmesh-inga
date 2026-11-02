@@ -1,11 +1,19 @@
 #!/usr/bin/with-contenv bash
 
-nordvpn set technology ${TECHNOLOGY:-NordLynx}
+# Since nordvpn 6.x "technology" and "protocol" were merged into a single "protocol" setting
+shopt -s nocasematch
+case "${TECHNOLOGY:-NordLynx}" in
+  OpenVPN) case "${PROTOCOL:-udp}" in tcp) protocol=openvpn_tcp ;; *) protocol=openvpn_udp ;; esac ;;
+  NordWhisper) protocol=nordwhisper ;;
+  *) protocol=nordlynx ;;
+esac
+shopt -u nocasematch
+nordvpn set protocol ${protocol}
 
 [[ -n ${DNS} ]] && nordvpn set dns ${DNS//[;,]/ }
 
-[[ -n ${CYBER_SEC} ]] && nordvpn set cybersec ${CYBER_SEC}
-[[ -n ${OBFUSCATE} ]] && nordvpn set obfuscate ${OBFUSCATE}
+[[ -n ${CYBER_SEC} ]] && nordvpn set protection ${CYBER_SEC}
+[[ -n ${OBFUSCATE} ]] && echo "OBFUSCATE is no longer supported by nordvpn, use CONNECT=Obfuscated_Servers instead."
 [[ -n ${FIREWALL} ]] && nordvpn set firewall ${FIREWALL}
 [[ -n ${LAN_DISCOVERY} ]] && nordvpn set lan-discovery ${LAN_DISCOVERY}
 
@@ -26,7 +34,8 @@ fi
 
 # Configue local network and routing allow list
 if [[ -n ${MESHNET} ]]; then
-  allowedLocalHosts=${ALLOWROUTE}
+  # Falls back to ALLOWROUTE for setups that relied on it granting local access too
+  allowedLocalHosts=${ALLOWLOCAL:-${ALLOWROUTE}}
   if [[ -n ${allowedLocalHosts} ]]; then
     IFS=',' read -ra allowed <<< "$allowedLocalHosts"
     for host in "${allowed[@]}"; do
@@ -43,22 +52,21 @@ if [[ -n ${MESHNET} ]]; then
   fi
 fi
 
-#[[ -n ${KILLSWITCH} ]] && nordvpn set killswitch ${KILLSWITCH} Killswitch is enabled by default using iptables
+# Without it traffic leaks through eth0 on 443/tcp (allowed for the nordvpn api) while the vpn is down
+nordvpn set killswitch ${KILLSWITCH:-on}
 
-[[ -n ${PROTOCOL} ]] && nordvpn set protocol ${PROTOCOL}
-
-[[ -n ${PORTS} ]] && for port in ${PORTS//[;,]/ }; do nordvpn whitelist add port "${port}"; done
-[[ -n ${PORT_RANGE} ]] && nordvpn whitelist add ports ${PORT_RANGE}
+[[ -n ${PORTS} ]] && for port in ${PORTS//[;,]/ }; do nordvpn allowlist add port "${port}"; done
+[[ -n ${PORT_RANGE} ]] && nordvpn allowlist add ports ${PORT_RANGE}
 
 docker_networks=$(dockerNetworks)
 if [[ -n ${docker_networks} ]]; then
   IFS=',' read -ra networks <<< "$docker_networks"
   for net in "${networks[@]}"; do
     network=($net)
-    nordvpn whitelist add subnet "${network[1]}"
+    nordvpn allowlist add subnet "${network[1]}"
   done
 fi
 [[ -n ${NETWORK} && -z ${NET_LOCAL} ]] && NET_LOCAL=${NETWORK}
-[[ -n ${NET_LOCAL} ]] && for net in ${NET_LOCAL//[;,]/ }; do nordvpn whitelist add subnet "${net}"; done
+[[ -n ${NET_LOCAL} ]] && for net in ${NET_LOCAL//[;,]/ }; do nordvpn allowlist add subnet "${net}"; done
 
 exit 0

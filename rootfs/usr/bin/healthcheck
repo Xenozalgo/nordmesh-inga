@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# NordVPN Container Healthcheck
+# Exit 0 = healthy, Exit 1 = unhealthy
+
+# Check if NordVPN daemon is running and VPN is connected
+if ! nordvpn status | grep -q "Status: Connected"; then
+    exit 1
+fi
+
+# Check internet connectivity through VPN
+if ! curl -LSs --max-time 10 'https://api.ipify.org' >/dev/null; then
+    exit 1
+fi
+
+# All checks passed
+exit 0

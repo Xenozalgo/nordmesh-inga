@@ -1,7 +1,5 @@
 #!/usr/bin/with-contenv bash
 
-/etc/init.d/nordvpn start
-
 if ! iptables -L > /dev/null 2>&1; then
   echo "FATAL: iptables is not functional. Ensure your container config adds --cap-add=NET_ADMIN,NET_RAW" 1>&2
   # Null route rather than leaving traffic unprotected.
@@ -21,7 +19,9 @@ while [ ! -S /run/nordvpn/nordvpnd.sock ] ; do
 done
 
 [[ -z "${TOKEN}" ]] && [[ -f "${TOKENFILE}" ]] && TOKEN="$(head -n 1 "${TOKENFILE}")"
-nordvpn logout --persist-token > /dev/null
+# nordvpn >= 4.x asks for analytics consent on first use and loops forever without a tty
+nordvpn set analytics off > /dev/null
+nordvpn logout > /dev/null
 
 if [[ -n ${TOKEN} ]]; then
   nordvpn login --token "${TOKEN}" || {

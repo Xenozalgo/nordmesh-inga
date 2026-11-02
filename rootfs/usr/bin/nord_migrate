@@ -10,7 +10,7 @@ shopt -s nocasematch; if [[ "${TECHNOLOGY:-NordLynx}" =~ "NordLynx" ]]; then
   echo "|__| |__|  |__| | _|       \______/  | _| \`._____|   |__|    /__/     \__\ |__| \__|     |__|"
   echo "↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓"
   echo "Please migrate to the NordLynx container (https://github.com/bubuntux/nordlynx)"
-  echo "Here is your private Key: $(wg show nordlynx private-key)"
+  echo "Get your private key with: docker exec <container> wg show nordlynx private-key"
   echo "IP: $(ip -o addr show dev nordlynx | awk '$3 == "inet" {print $4}')"
   echo "############################################################"
 fi
