@@ -21,6 +21,9 @@ done
 [[ -z "${TOKEN}" ]] && [[ -f "${TOKENFILE}" ]] && TOKEN="$(head -n 1 "${TOKENFILE}")"
 # nordvpn >= 4.x asks for analytics consent on first use and loops forever without a tty
 nordvpn set analytics off > /dev/null
+# iptables policies are ACCEPT, so the kill switch is the only thing blocking traffic outside the vpn;
+# enable it before login so there is no unprotected window while connecting
+nordvpn set killswitch ${KILLSWITCH:-on}
 nordvpn logout > /dev/null
 
 if [[ -n ${TOKEN} ]]; then

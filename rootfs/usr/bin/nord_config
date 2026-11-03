@@ -52,9 +52,6 @@ if [[ -n ${MESHNET} ]]; then
   fi
 fi
 
-# Without it traffic leaks through eth0 on 443/tcp (allowed for the nordvpn api) while the vpn is down
-nordvpn set killswitch ${KILLSWITCH:-on}
-
 [[ -n ${PORTS} ]] && for port in ${PORTS//[;,]/ }; do nordvpn allowlist add port "${port}"; done
 [[ -n ${PORT_RANGE} ]] && nordvpn allowlist add ports ${PORT_RANGE}
 

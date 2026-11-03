@@ -3,11 +3,12 @@
 update-alternatives --set iptables /usr/sbin/iptables-legacy
 update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
-iptables -P OUTPUT DROP
-iptables -P INPUT DROP
-iptables -P FORWARD DROP
-ip6tables -P OUTPUT DROP 2>/dev/null
-ip6tables -P INPUT DROP 2>/dev/null
-ip6tables -P FORWARD DROP 2>/dev/null
+# Blocking is left to the nordvpn kill switch (nftables), see KILLSWITCH in nord_login
+iptables -P OUTPUT ACCEPT
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+ip6tables -P OUTPUT ACCEPT 2>/dev/null
+ip6tables -P INPUT ACCEPT 2>/dev/null
+ip6tables -P FORWARD ACCEPT 2>/dev/null
 
-echo "Firewall is up, everything has to go through the vpn"
+echo "Firewall is up, traffic is protected by the nordvpn kill switch"
