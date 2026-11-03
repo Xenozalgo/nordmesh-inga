@@ -19,8 +19,10 @@ This container was designed to be started first to provide a connection to other
 
 ## Starting an NordVPN instance
     docker run -ti --cap-add=NET_ADMIN --cap-add=NET_RAW --name vpn \
-               -e TOKEN=f6f2bb45... \
+               -e TOKEN=f6f2bb45... -v nordvpn:/var/lib/nordvpn \
                -e TECHNOLOGY=NordLynx -d ghcr.io/bubuntux/nordvpn
+
+**NOTE**: Mount a volume on `/var/lib/nordvpn` so the session and the Meshnet device identity survive container recreation (e.g. image updates). Without it every new container registers a new Meshnet device until the account device limit is reached.
 
 Once it's up other containers can be started using its network connection:
 
@@ -40,6 +42,8 @@ services:
       - CONNECT=United_States
       - TECHNOLOGY=NordLynx
       - NETWORK=192.168.1.0/24  # So it can be accessed within the local network
+    volumes:
+      - nordvpn:/var/lib/nordvpn # Keeps the session and Meshnet device across recreations
     ports:
       - 8080:8080
     sysctls:
@@ -49,6 +53,8 @@ services:
     network_mode: service:vpn
     depends_on:
       - vpn
+volumes:
+  nordvpn:
       
 # The torrent service would be available at http://localhost:8080/ 
 # or anywhere inside of the local network http://192.168.1.xxx:8080

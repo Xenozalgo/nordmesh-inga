@@ -24,16 +24,33 @@ nordvpn set analytics off > /dev/null
 # iptables policies are ACCEPT, so the kill switch is the only thing blocking traffic outside the vpn;
 # enable it before login so there is no unprotected window while connecting
 nordvpn set killswitch ${KILLSWITCH:-on}
-nordvpn logout > /dev/null
 
-if [[ -n ${TOKEN} ]]; then
+if [[ -z ${TOKEN} ]]; then
+  echo "No token set."
+  exit 1
+fi
+
+# logout wipes the device key, which registers a new meshnet device on every start until the
+# account device limit is reached, so keep the session unless the token changed
+token_hash_file=/var/lib/nordvpn/token.sha256
+token_hash=$(echo -n "${TOKEN}" | sha256sum | cut -d' ' -f1)
+logged_in=""
+if [[ "$(cat "${token_hash_file}" 2>/dev/null)" == "${token_hash}" ]]; then
+  # a false negative costs a meshnet device, so give the daemon a few chances to load the session
+  for i in 1 2 3; do
+    nordvpn account > /dev/null 2>&1 && logged_in=1 && break
+    sleep 2
+  done
+fi
+if [[ -n ${logged_in} ]]; then
+  echo "Already logged in."
+else
+  nordvpn logout > /dev/null
   nordvpn login --token "${TOKEN}" || {
     echo "Invalid token."
     exit 1
   }
-else
-  echo "No token set."
-  exit 1
+  (umask 077; echo "${token_hash}" > "${token_hash_file}")
 fi
 
 exit 0

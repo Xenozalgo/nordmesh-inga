@@ -21,7 +21,8 @@ nordvpn set protocol ${protocol}
 if [[ -n ${MESHNET} ]]; then
   echo "Meshing..."
   current_sleep=1
-  until nordvpn set meshnet on; do
+  # meshnet stays enabled across restarts, only turn it on when it is not
+  until nordvpn settings | grep -q "Meshnet: enabled" || nordvpn set meshnet on; do
     if [ ${current_sleep} -gt 4096 ]; then
       echo "Unable to mesh."
       exit 1
